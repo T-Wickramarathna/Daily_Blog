@@ -1,0 +1,1 @@
+Trying to get to know with Git
