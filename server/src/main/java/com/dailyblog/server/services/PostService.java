@@ -25,7 +25,7 @@ public class PostService {
     }
 
     // 2. READ ALL Operation
-    public List<Post> findAll() {
+    public List<Post> getAllPosts() {
         return postRepository.findAll();
     }
 
