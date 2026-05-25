@@ -13,6 +13,9 @@ function App() {
   const [author, setAuthor] = useState('');
   const [content, setContent] = useState('');
 
+  const [isEditing, setIsEditing] = useState(false);
+  const [currentPostId, setCurrentPostId] = useState(null);
+
   // 3. Define the base URL of our Spring Boot API
   const API_URL = "http://localhost:8080/api/posts";
 
@@ -34,6 +37,7 @@ function App() {
     fetchPosts();
   }, []); // The empty brackets [] mean "run only once when the page loads"
 
+  // CREATE or UPDATE form route path submission dispatcher
   const handleSubmit = async (e) => {
     e.preventDefault(); // Prevents the browser from reloading the entire webpage
 
@@ -43,15 +47,17 @@ function App() {
     }
 
     // Wrap the state variables into a structured payload matching our Java PostDTO
-    const newPostPayload = {
-      title: title,
-      author: author,
-      content: content
-    };
+    const newPostPayload = { title, author, content };
 
     try {
-      // Send the data package over HTTP POST to Spring Boot
-      await axios.post(API_URL, newPostPayload);
+      if (isEditing) {
+        await axios.put(`${API_URL}/${currentPostId}`, newPostPayload);
+        setIsEditing(false);
+        setCurrentPostId(null);
+      } else {
+        // Send the data package over HTTP POST to Spring Boot
+        await axios.post(API_URL, newPostPayload);
+      }
 
       // Clear the input fields on screen if successful
       setTitle('');
@@ -65,6 +71,36 @@ function App() {
     }
   };
 
+  // Populate form tracking variables to perform update routing
+  const handleEditClick = (post) => {
+    setIsEditing(true);
+    setCurrentPostId(post.id);
+    setTitle(post.title);
+    setAuthor(post.author);
+    setContent(post.content);
+  };
+
+  // Reset visual editing state back to plain post creation mode
+  const cancleEditing = () => {
+    setIsEditing(false);
+    setCurrentPostId(null);
+    setTitle('');
+    setAuthor('');
+    setContent('');
+  };
+
+  // DELETE Operation (DELETE http://localhost:8080/api/posts/{id})
+  const handleDeleteClick = async (id) => {
+    if (window.confirm("Are you sure you want to permanently erase this blog record?")) {
+      try {
+        await axios.delete(`${API_URL}/${id}`);
+        fetchPosts();
+      } catch (error) {
+        console.error("Failed executing delete statement context parameter mapping:", error);
+      }
+    }
+  };
+
   return (
     <div className="blog-container">
       <header className="blog-header">
@@ -73,8 +109,9 @@ function App() {
 
       <main>
 
-        <section className='form-card'>
-          <h2 className='section-title' style={{ margin: 0 }}>Write a new Article</h2>
+        {/* Dynamic Multi-Mode Form Engine (Create / Update Tracker Context) */}
+        <section className={`form-card ${isEditing ? 'editing-activate' : ''}`}>
+          <h2 className='section-title' style={{ margin: 0 }}>{`${isEditing ? "Modifying Entry Mode" : "Write a new Article"}`}</h2>
           <form onSubmit={handleSubmit}>
 
             <div className='form-group' style={{ marginTop: 8 }}>
@@ -94,6 +131,7 @@ function App() {
                 placeholder='Your name...'
                 value={author}
                 onChange={(e) => setAuthor(e.target.value)}
+                disabled={isEditing} /* Locks downstream changes to primary author tag context */
               />
             </div>
 
@@ -107,7 +145,14 @@ function App() {
               />
             </div>
 
-            <button type='submit' className='btn-submit'>Publish Post</button>
+            <button type='submit' className='btn-submit'>
+              {`${isEditing ? "Update Article Data" : "Publish Post"}`}
+            </button>
+            {isEditing && (
+              <button type="button" className='btn-cancel' onClick={cancleEditing}>
+                Cancle Editing
+              </button>
+            )}
           </form>
         </section>
 
@@ -132,6 +177,13 @@ function App() {
                   <strong>Posted:</strong> {new Date(post.createdAt).toLocaleDateString()}
                 </span>
               </div>
+
+              {/* Administrative Operational Control Triggers */}
+              <div className="card-actions">
+                <button className="btn-edit" onClick={() => handleEditClick(post)}>Edit</button>
+                <button className="btn-delete" onClick={() => handleDeleteClick(post.id)}>Delete</button>
+              </div>
+
             </div>
           ))
         )}
