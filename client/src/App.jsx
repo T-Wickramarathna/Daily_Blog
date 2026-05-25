@@ -8,10 +8,15 @@ function App() {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // 2. Define the base URL of our Spring Boot API
+  // 2. State hooks tracking what the user types into the form fields
+  const [title, setTitle] = useState('');
+  const [author, setAuthor] = useState('');
+  const [content, setContent] = useState('');
+
+  // 3. Define the base URL of our Spring Boot API
   const API_URL = "http://localhost:8080/api/posts";
 
-  // 3. Create a function to fetch the blog posts from Java
+  // 4. Create a function to fetch the blog posts from Java
   const fetchPosts = async () => {
     try {
       setLoading(true);
@@ -24,10 +29,41 @@ function App() {
     }
   };
 
-  // 4. Run this fetch function automatically when the webpage loads
+  // 5. Run this fetch function automatically when the webpage loads
   useEffect(() => {
     fetchPosts();
   }, []); // The empty brackets [] mean "run only once when the page loads"
+
+  const handleSubmit = async (e) => {
+    e.preventDefault(); // Prevents the browser from reloading the entire webpage
+
+    if (!title || !author || !content) {
+      alert("Please fill out all fields before submitting !");
+      return;
+    }
+
+    // Wrap the state variables into a structured payload matching our Java PostDTO
+    const newPostPayload = {
+      title: title,
+      author: author,
+      content: content
+    };
+
+    try {
+      // Send the data package over HTTP POST to Spring Boot
+      await axios.post(API_URL, newPostPayload);
+
+      // Clear the input fields on screen if successful
+      setTitle('');
+      setAuthor('');
+      setContent('');
+
+      // Refresh our blog list instantly so the user sees their new entry appear
+      fetchPosts();
+    } catch (error) {
+      console.error("Error creating new post:", error);
+    }
+  };
 
   return (
     <div className="blog-container">
@@ -36,6 +72,45 @@ function App() {
       </header>
 
       <main>
+
+        <section className='form-card'>
+          <h2 className='section-title' style={{ margin: 0 }}>Write a new Article</h2>
+          <form onSubmit={handleSubmit}>
+
+            <div className='form-group' style={{ marginTop: 8 }}>
+              <label>Article Title</label>
+              <input type="text"
+                className='form-control'
+                placeholder='Enter a catchy title...'
+                value={title}
+                onChange={(e) => setTitle(e.target.value)} // Updates the title state variable on keypress
+              />
+            </div>
+
+            <div className='form-group'>
+              <label>Author Name</label>
+              <input type="text"
+                className='form-control'
+                placeholder='Your name...'
+                value={author}
+                onChange={(e) => setAuthor(e.target.value)}
+              />
+            </div>
+
+            <div className='form-group'>
+              <label>Content</label>
+              <textarea rows={5}
+                className='form-control'
+                placeholder='Write your thoughts here...'
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+              />
+            </div>
+
+            <button type='submit' className='btn-submit'>Publish Post</button>
+          </form>
+        </section>
+
         <h2 className="section-title">All Blog Posts</h2>
 
         {loading ? (
@@ -43,7 +118,7 @@ function App() {
         ) : posts.length === 0 ? (
           <p>No blog posts found. Create your first post!</p>
         ) : (
-          //  5. Loop through the array of posts using .map() and render them on screen
+          //  6. Loop through the array of posts using .map() and render them on screen
           posts.map((post) => (
             <div key={post.id} className="blog-card">
               <h3 className="post-title">{post.title}</h3>
