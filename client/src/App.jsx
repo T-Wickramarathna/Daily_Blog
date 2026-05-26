@@ -110,7 +110,7 @@ function App() {
       <main>
 
         {/* Dynamic Multi-Mode Form Engine (Create / Update Tracker Context) */}
-        <section className={`form-card ${isEditing ? 'editing-activate' : ''}`}>
+        <section className={`form-card ${isEditing ? 'editing-active' : ''}`}>
           <h2 className='section-title' style={{ margin: 0 }}>{`${isEditing ? "Modifying Entry Mode" : "Write a new Article"}`}</h2>
           <form onSubmit={handleSubmit}>
 
